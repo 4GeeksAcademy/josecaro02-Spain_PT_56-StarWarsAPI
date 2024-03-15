@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
+from models import db, User, Planets
 #from models import Person
 
 app = Flask(__name__)
@@ -36,14 +36,52 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-@app.route('/user', methods=['GET'])
+@app.route('/users', methods=['GET'])
 def handle_hello():
+    #SELECT * FROM user;
+    users = User.query.all()
+    
+    #users_serialized_map = list(map(lambda x: x.serialize(), users))
+
+    users_serialized = []
+    for user in users:
+        users_serialized.append(user.serialize())
 
     response_body = {
-        "msg": "Hello, this is your GET /user response "
+        "msg": "ok",
+        "result": users_serialized
     }
 
     return jsonify(response_body), 200
+
+@app.route('/planets', methods=['GET'])
+def get_planets():
+    planets = Planets.query.all()
+    print(planets)
+    planets_serialized=[]
+    for x in planets:
+        planets_serialized.append(x.serialize())
+    return jsonify({"msg": "ok", "results": planets_serialized}), 200
+
+@app.route('/planets/<int:id>', methods=['GET'])
+def get_single_planet(id):
+    planet = Planets.query.get(id)
+    print(planet)
+    return jsonify({"msg": "ok", "planet": planet.serialize()})
+
+@app.route('/planets', methods=['POST'])
+def add_planet():
+    body = request.get_json(silent=True)
+    if body is None:
+        return jsonify("Debes enviar información en el body"), 400
+    if 'name' not in body:
+        return jsonify("El campo name es obligatorio"), 400
+    new_planet = Planets()
+    new_planet.name = body['name']
+    db.session.add(new_planet)
+    db.session.commit()
+    return jsonify("Planeta agregado satisfactoriamente"), 200
+
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
