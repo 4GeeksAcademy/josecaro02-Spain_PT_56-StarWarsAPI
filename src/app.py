@@ -1,5 +1,6 @@
 """
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
+cambios en app
 """
 import os
 from flask import Flask, request, jsonify, url_for
@@ -8,7 +9,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Planets
+from models import db, User, Planets, Favorite_Planets
 #from models import Person
 
 app = Flask(__name__)
@@ -82,6 +83,25 @@ def add_planet():
     db.session.commit()
     return jsonify("Planeta agregado satisfactoriamente"), 200
 
+#body -> user_id
+@app.route('/user/favorites', methods=['GET'])
+def favorites_user():
+    body = request.get_json(silent=True)
+    if body is None:
+        return jsonify({'msg': 'Debes enviar información en el body'}), 400
+    if 'user_id' not in body:
+        return jsonify({'msg': 'El campo user_id es obligatorio'}), 400
+    user = User.query.get(body['user_id'])
+    if user is None:
+        return jsonify({'msg': "El usuario con el id: {} no existe".format(body['user_id'])}), 404
+    favorite_planets = db.session.query(Favorite_Planets, Planets).join(Planets).filter(Favorite_Planets.user_id == body['user_id']).all()
+    print(favorite_planets)
+    favorite_planets_serialized = []
+    for favorite_item, planet_item in favorite_planets:
+        #id en favorite planets, información del planeta
+        favorite_planets_serialized.append({'favorite_planet_id': favorite_item.id, 'planet': planet_item.serialize()})
+
+    return jsonify({'msg':'ok', 'results': favorite_planets_serialized})
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':

@@ -36,3 +36,20 @@ class Planets(db.Model):
             "name": self.name,
         }
     
+class Favorite_Planets(db.Model):
+    __tablename__ = 'favorite_planets'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_relationship = db.relationship(User)
+    planet_id = db.Column(db.Integer, db.ForeignKey('planets.id'), nullable=False)
+    planet_relationship = db.relationship(Planets)
+
+    def __repr__(self):
+        return "Al usuario {} le gusta el planeta {}".format(self.user_id, self.planet_id)
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "planet_id": self.planet_id
+        }
